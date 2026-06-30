@@ -1,7 +1,47 @@
-# vendor-contract-agent
+# Vendor Contract Review Agent 
 
-Simple ReAct agent
-Agent generated with `agents-cli` version `0.6.1`
+An ambient AI agent that monitors incoming vendor contracts and renewal notices, automatically flags cost-saving opportunities, and routes
+high-value or high-risk decisions to a human for approval before taking any action.
+
+## What It Does
+
+Companies routinely overpay for SaaS and vendor subscriptions because nobody has time to manually audit every contract for usage mismatches,
+auto-renewal traps, or unfavorable terms. This agent solves that by:
+
+1. **Watching for incoming contracts/renewal notices** (simulated locally via a Pub/Sub-style webhook trigger, designed to integrate with a   real event source such as Gmail or Google Drive in production)
+2. **Extracting structured terms** from unstructured text using an LLM, 
+   vendor name, price, renewal date, notice period, and usage tier
+3. **Calculating a flagged savings opportunity** by comparing contracted
+   spend against actual usage
+4. **Routing automatically**:
+   - Low-value findings (< $500/year) are auto-logged with no human
+     review required
+   - High-value findings (≥ $500/year) pause the workflow and require
+     explicit human approval before any further action is taken
+5. **Drafting a renegotiation/cancellation email** once a human approves.
+   This is the agent's actual deliverable. Rather than just notifying someone that "this contract looks wasteful," the agent writes a complete,
+   ready-to-send email citing the specific usage mismatch, dollar amount,
+   and contractual notice period, so the reviewer's job becomes "read,
+   tweak if needed, and send" instead of writing it from scratch.
+
+
+## Security Features
+
+Because this agent processes untrusted external text (contract documents
+and emails), it includes two layers of defense before any content reaches
+the LLM or gets stored:
+
+- **PII Redaction**: Personally identifiable information (e.g., SSNs) is
+  detected and redacted before being passed to the LLM or persisted in
+  session state.
+- **Prompt-Injection Defense**: Incoming text is screened for attempts to
+  manipulate agent behavior (e.g., "ignore previous instructions,"
+  "auto-approve this"). Any detected injection attempt forces the
+  submission into the human-review path — regardless of the dollar
+  amount the attacker claims — and surfaces an explicit security warning
+  to the reviewer.
+
+
 
 ## Project Structure
 
@@ -86,3 +126,6 @@ Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
 
 This agent supports the [A2A Protocol](https://a2a-protocol.org/). Use the [A2A Inspector](https://github.com/a2aproject/a2a-inspector) to test interoperability.
 See the [A2A Inspector docs](https://github.com/a2aproject/a2a-inspector) for details.
+
+Simple ReAct agent
+Agent generated with `agents-cli` version `0.6.1`
